@@ -7,6 +7,10 @@ import com.antoniodias.tasklist.task.dto.TaskResponse;
 import com.antoniodias.tasklist.task.enums.TaskStatus;
 import com.antoniodias.tasklist.task.service.TaskService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,10 +35,11 @@ public class TaskController {
     }
 
     @GetMapping("/tasks")
-    public List<TaskResponse> findAll(
+    public Page<TaskResponse> findAll(
             @RequestParam(required = false) TaskStatus status,
-            @RequestParam(required = false) UUID projectId) {
-        return service.findAll(status, projectId);
+            @RequestParam(required = false) UUID projectId,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return service.findAll(status, projectId, pageable);
     }
 
     @GetMapping("/tasks/{id}")
