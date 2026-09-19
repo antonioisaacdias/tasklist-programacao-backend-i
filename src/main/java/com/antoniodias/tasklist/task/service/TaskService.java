@@ -40,12 +40,7 @@ public class TaskService {
     @Transactional
     public TaskResponse create(TaskRequest request) {
         Task task = new Task();
-        task.setTitle(request.title());
-        task.setDescription(request.description());
-        task.setDueDate(request.dueDate());
-        task.setProject(projectService.findEntityById(request.projectId()));
-        task.setOwner(resolveOwner(request.ownerId()));
-        task.setPriority(resolvePriority(request.priority()));
+        apply(task, request);
         Task saved = repository.saveAndFlush(task);
         log.info("Task created id={} projectId={} priority={}", saved.getId(), saved.getProject().getId(), saved.getPriority());
         return TaskResponse.from(saved);
@@ -55,9 +50,9 @@ public class TaskService {
         return findEntities(status, projectId, pageable).map(TaskResponse::from);
     }
 
-    public List<TaskResponse> findByProject(UUID projectId) {
+    public Page<TaskResponse> findByProject(UUID projectId, Pageable pageable) {
         projectService.findEntityById(projectId);
-        return repository.findByProjectId(projectId).stream().map(TaskResponse::from).toList();
+        return repository.findByProjectId(projectId, pageable).map(TaskResponse::from);
     }
 
     public TaskResponse findById(UUID id) {
@@ -67,17 +62,13 @@ public class TaskService {
     @Transactional
     public TaskResponse update(UUID id, TaskRequest request) {
         Task task = findEntityById(id);
-        task.setTitle(request.title());
-        task.setDescription(request.description());
-        task.setDueDate(request.dueDate());
-        task.setProject(projectService.findEntityById(request.projectId()));
-        task.setOwner(resolveOwner(request.ownerId()));
-        task.setPriority(resolvePriority(request.priority()));
+        apply(task, request);
         if (request.status() != null) {
             changeStatus(task, request.status());
         }
+        Task saved = repository.saveAndFlush(task);
         log.info("Task updated id={}", id);
-        return TaskResponse.from(task);
+        return TaskResponse.from(saved);
     }
 
     @Transactional
@@ -98,14 +89,14 @@ public class TaskService {
     public TagResponse addTag(UUID taskId, UUID tagId) {
         Task task = findEntityById(taskId);
         Tag tag = tagService.findEntityById(tagId);
-        TaskTag link = taskTagRepository.findByTaskIdAndTagId(taskId, tagId).orElseGet(() -> {
-            TaskTag created = new TaskTag();
-            created.setTask(task);
-            created.setTag(tag);
+        if (taskTagRepository.findByTaskIdAndTagId(taskId, tagId).isEmpty()) {
+            TaskTag link = new TaskTag();
+            link.setTask(task);
+            link.setTag(tag);
+            taskTagRepository.save(link);
             log.info("Tag linked taskId={} tagId={}", taskId, tagId);
-            return taskTagRepository.save(created);
-        });
-        return TagResponse.from(link.getTag());
+        }
+        return TagResponse.from(tag);
     }
 
     @Transactional
@@ -129,7 +120,19 @@ public class TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Task", id));
     }
 
+    private void apply(Task task, TaskRequest request) {
+        task.setTitle(request.title());
+        task.setDescription(request.description());
+        task.setDueDate(request.dueDate());
+        task.setProject(projectService.findEntityById(request.projectId()));
+        task.setOwner(resolveOwner(request.ownerId()));
+        task.setPriority(resolvePriority(request.priority()));
+    }
+
     private void changeStatus(Task task, TaskStatus status) {
+        if (task.getStatus() == status) {
+            return;
+        }
         log.info("Task status change id={} {} -> {}", task.getId(), task.getStatus(), status);
         task.setStatus(status);
         if (status == TaskStatus.DONE) {

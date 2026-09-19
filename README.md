@@ -63,7 +63,7 @@ com.antoniodias.tasklist
 ├── tag/         controller, service, repository, entity, dto
 ├── task/        controller, service, repository, entity, dto, enums
 ├── comment/     controller, service, repository, entity, dto
-└── shared/      exceção de domínio e tratamento global de erros
+└── shared/      exceção de domínio, tratamento global de erros e configuração de logging
 ```
 
 - Controllers só traduzem HTTP e delegam ao service; toda regra fica no service.
@@ -80,7 +80,7 @@ Nomes de recursos, campos e valores de enum estão em inglês. Correspondência 
 |---|---|---|
 | POST | `/projects` | 201 + `Location` |
 | GET | `/projects` | 200 |
-| GET | `/projects/{id}/tasks` | 200 (404 se o projeto não existe) |
+| GET | `/projects/{id}/tasks` | 200 (paginado; 404 se o projeto não existe) |
 
 ### Responsáveis
 
@@ -114,7 +114,7 @@ Nomes de recursos, campos e valores de enum estão em inglês. Correspondência 
 
 Valores válidos: `status` = `NEW`, `IN_PROGRESS`, `DONE`, `CANCELED`; `priority` = `LOW`, `MEDIUM`, `HIGH`.
 
-`GET /tasks` é paginado: `page` (0-based, padrão 0), `size` (padrão 20), `sort` (ex.: `sort=dueDate,asc`; padrão `createdAt,desc`). A resposta tem o formato `{ "content": [...], "page": { "size", "number", "totalElements", "totalPages" } }`.
+`GET /tasks` e `GET /projects/{id}/tasks` são paginados: `page` (0-based, padrão 0), `size` (padrão 20), `sort` (ex.: `sort=dueDate,asc`; padrão `createdAt,desc`). A resposta tem o formato `{ "content": [...], "page": { "size", "number", "totalElements", "totalPages" } }`.
 
 ### Exemplo: criar tarefa
 
@@ -131,7 +131,7 @@ Valores válidos: `status` = `NEW`, `IN_PROGRESS`, `DONE`, `CANCELED`; `priority
 }
 ```
 
-Resposta `201 Created`, `Location: /tasks/52cf772c-...`:
+Resposta `201 Created`, `Location: http://localhost:8080/tasks/52cf772c-...`:
 
 ```json
 {
@@ -150,9 +150,10 @@ Resposta `201 Created`, `Location: /tasks/52cf772c-...`:
 
 ### Regras de negócio
 
-- A tarefa nasce com `status = NEW` e `createdAt` preenchido pelo sistema; `priority` omitida vira `MEDIUM`.
+- A tarefa nasce com `status = NEW` e `createdAt` preenchido pelo sistema; `status` enviado no POST é ignorado. `priority` omitida vira `MEDIUM`.
+- No PUT todos os campos são substituídos (`owner` omitido fica sem responsável, `priority` omitida vira `MEDIUM`), exceto `status`, que é preservado quando omitido.
 - Toda tarefa pertence a um projeto existente. Responsável é opcional.
-- Ao mudar o status para `DONE` (via `PUT /tasks/{id}` ou `PUT /tasks/{id}/complete`), `completedAt` é preenchido. Ao sair de `DONE`, é limpo.
+- Ao mudar o status para `DONE` (via `PUT /tasks/{id}` ou `PUT /tasks/{id}/complete`), `completedAt` é preenchido. Ao sair de `DONE`, é limpo. Concluir uma tarefa já concluída não altera `completedAt`.
 - Vincular uma etiqueta já vinculada não duplica o vínculo.
 - Remover uma tarefa remove seus comentários e vínculos de etiqueta.
 
@@ -170,8 +171,9 @@ Todo erro devolve o mesmo corpo, sem stack trace:
 | Situação | Status |
 |---|---|
 | Recurso inexistente | 404 |
-| Violação de integridade (ex.: e-mail duplicado, campo obrigatório nulo) | 409 |
-| JSON malformado, enum ou UUID inválido | 400 |
+| Campo obrigatório ausente (`Missing required field: name`) | 400 |
+| JSON malformado, enum ou UUID inválido, campo de ordenação inexistente | 400 |
+| Violação de integridade (ex.: e-mail duplicado) | 409 |
 | Rota inexistente / método não suportado | 404 / 405 |
 
 ## Verificação
