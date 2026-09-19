@@ -6,12 +6,14 @@ import com.antoniodias.tasklist.owner.entity.Owner;
 import com.antoniodias.tasklist.owner.repository.OwnerRepository;
 import com.antoniodias.tasklist.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OwnerService {
@@ -23,7 +25,9 @@ public class OwnerService {
         Owner owner = new Owner();
         owner.setName(request.name());
         owner.setEmail(request.email());
-        return OwnerResponse.from(repository.save(owner));
+        Owner saved = repository.saveAndFlush(owner);
+        log.info("Owner created id={} email={}", saved.getId(), saved.getEmail());
+        return OwnerResponse.from(saved);
     }
 
     public List<OwnerResponse> findAll() {

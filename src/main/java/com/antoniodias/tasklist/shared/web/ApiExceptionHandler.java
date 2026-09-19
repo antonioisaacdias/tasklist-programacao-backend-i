@@ -20,12 +20,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError notFound(ResourceNotFoundException e) {
+        log.warn("{}", e.getMessage());
         return ApiError.of(e.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError conflict(DataIntegrityViolationException e) {
+        log.warn("Data integrity violation: {}", e.getMostSpecificCause().getMessage());
         return ApiError.of("Data integrity violation");
     }
 
@@ -42,6 +44,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleExceptionInternal(
             Exception ex, Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
         HttpStatus status = HttpStatus.valueOf(statusCode.value());
+        log.warn("{} {}", status.value(), ex.getMessage());
         return ResponseEntity.status(status).headers(headers).body(ApiError.of(status.getReasonPhrase()));
     }
 }

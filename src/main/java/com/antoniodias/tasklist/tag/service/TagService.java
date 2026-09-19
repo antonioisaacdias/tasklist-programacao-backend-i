@@ -6,12 +6,14 @@ import com.antoniodias.tasklist.tag.dto.TagResponse;
 import com.antoniodias.tasklist.tag.entity.Tag;
 import com.antoniodias.tasklist.tag.repository.TagRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TagService {
@@ -23,7 +25,9 @@ public class TagService {
         Tag tag = new Tag();
         tag.setName(request.name());
         tag.setColor(request.color());
-        return TagResponse.from(repository.save(tag));
+        Tag saved = repository.saveAndFlush(tag);
+        log.info("Tag created id={} name={}", saved.getId(), saved.getName());
+        return TagResponse.from(saved);
     }
 
     public List<TagResponse> findAll() {
