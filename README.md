@@ -101,7 +101,7 @@ Nomes de recursos, campos e valores de enum estão em inglês. Correspondência 
 | Método | Rota | Sucesso | Falha |
 |---|---|---|---|
 | POST | `/tasks` | 201 + `Location` | 404 (projeto/responsável inexistente) |
-| GET | `/tasks?status=&projectId=` | 200 | |
+| GET | `/tasks?status=&projectId=&page=&size=&sort=` | 200 (paginado) | |
 | GET | `/tasks/{id}` | 200 | 404 |
 | PUT | `/tasks/{id}` | 200 | 404 |
 | PUT | `/tasks/{id}/complete` | 200 | 404 |
@@ -113,6 +113,8 @@ Nomes de recursos, campos e valores de enum estão em inglês. Correspondência 
 | POST | `/tasks/{id}/comments` | 201 | 404 |
 
 Valores válidos: `status` = `NEW`, `IN_PROGRESS`, `DONE`, `CANCELED`; `priority` = `LOW`, `MEDIUM`, `HIGH`.
+
+`GET /tasks` é paginado: `page` (0-based, padrão 0), `size` (padrão 20), `sort` (ex.: `sort=dueDate,asc`; padrão `createdAt,desc`). A resposta tem o formato `{ "content": [...], "page": { "size", "number", "totalElements", "totalPages" } }`.
 
 ### Exemplo: criar tarefa
 

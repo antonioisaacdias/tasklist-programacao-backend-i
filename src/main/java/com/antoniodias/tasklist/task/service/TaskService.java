@@ -16,6 +16,8 @@ import com.antoniodias.tasklist.task.enums.TaskStatus;
 import com.antoniodias.tasklist.task.repository.TaskRepository;
 import com.antoniodias.tasklist.task.repository.TaskTagRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,8 +47,8 @@ public class TaskService {
         return TaskResponse.from(repository.save(task));
     }
 
-    public List<TaskResponse> findAll(TaskStatus status, UUID projectId) {
-        return findEntities(status, projectId).stream().map(TaskResponse::from).toList();
+    public Page<TaskResponse> findAll(TaskStatus status, UUID projectId, Pageable pageable) {
+        return findEntities(status, projectId, pageable).map(TaskResponse::from);
     }
 
     public List<TaskResponse> findByProject(UUID projectId) {
@@ -142,16 +144,16 @@ public class TaskService {
         return ownerService.findEntityById(ownerId);
     }
 
-    private List<Task> findEntities(TaskStatus status, UUID projectId) {
+    private Page<Task> findEntities(TaskStatus status, UUID projectId, Pageable pageable) {
         if (status != null && projectId != null) {
-            return repository.findByStatusAndProjectId(status, projectId);
+            return repository.findByStatusAndProjectId(status, projectId, pageable);
         }
         if (status != null) {
-            return repository.findByStatus(status);
+            return repository.findByStatus(status, pageable);
         }
         if (projectId != null) {
-            return repository.findByProjectId(projectId);
+            return repository.findByProjectId(projectId, pageable);
         }
-        return repository.findAll();
+        return repository.findAll(pageable);
     }
 }

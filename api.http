@@ -68,8 +68,11 @@ Content-Type: application/json
 
 > {% client.global.set("taskId", response.body.id); %}
 
-### 4. Listar tarefas — as três com status NEW (200)
+### 4. Listar tarefas — as três com status NEW, paginado (200)
 GET {{baseUrl}}/tasks
+
+### Bônus — paginação e ordenação (200)
+GET {{baseUrl}}/tasks?page=0&size=2&sort=title,asc
 
 ### 5a. Filtrar por status — DONE retorna lista vazia (200)
 GET {{baseUrl}}/tasks?status=DONE
