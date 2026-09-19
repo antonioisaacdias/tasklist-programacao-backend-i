@@ -6,12 +6,14 @@ import com.antoniodias.tasklist.comment.entity.Comment;
 import com.antoniodias.tasklist.comment.repository.CommentRepository;
 import com.antoniodias.tasklist.task.service.TaskService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CommentService {
@@ -25,7 +27,9 @@ public class CommentService {
         comment.setText(request.text());
         comment.setAuthor(request.author());
         comment.setTask(taskService.findEntityById(taskId));
-        return CommentResponse.from(repository.save(comment));
+        Comment saved = repository.saveAndFlush(comment);
+        log.info("Comment added id={} taskId={} author={}", saved.getId(), taskId, saved.getAuthor());
+        return CommentResponse.from(saved);
     }
 
     public List<CommentResponse> findByTask(UUID taskId) {

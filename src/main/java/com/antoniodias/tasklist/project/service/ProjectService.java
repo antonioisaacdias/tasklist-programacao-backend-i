@@ -6,12 +6,14 @@ import com.antoniodias.tasklist.project.entity.Project;
 import com.antoniodias.tasklist.project.repository.ProjectRepository;
 import com.antoniodias.tasklist.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -23,7 +25,9 @@ public class ProjectService {
         Project project = new Project();
         project.setName(request.name());
         project.setDescription(request.description());
-        return ProjectResponse.from(repository.save(project));
+        Project saved = repository.saveAndFlush(project);
+        log.info("Project created id={} name={}", saved.getId(), saved.getName());
+        return ProjectResponse.from(saved);
     }
 
     public List<ProjectResponse> findAll() {

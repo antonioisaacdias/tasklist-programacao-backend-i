@@ -16,6 +16,7 @@ import com.antoniodias.tasklist.task.enums.TaskStatus;
 import com.antoniodias.tasklist.task.repository.TaskRepository;
 import com.antoniodias.tasklist.task.repository.TaskTagRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TaskService {
@@ -44,7 +46,9 @@ public class TaskService {
         task.setProject(projectService.findEntityById(request.projectId()));
         task.setOwner(resolveOwner(request.ownerId()));
         task.setPriority(resolvePriority(request.priority()));
-        return TaskResponse.from(repository.save(task));
+        Task saved = repository.saveAndFlush(task);
+        log.info("Task created id={} projectId={} priority={}", saved.getId(), saved.getProject().getId(), saved.getPriority());
+        return TaskResponse.from(saved);
     }
 
     public Page<TaskResponse> findAll(TaskStatus status, UUID projectId, Pageable pageable) {
@@ -72,6 +76,7 @@ public class TaskService {
         if (request.status() != null) {
             changeStatus(task, request.status());
         }
+        log.info("Task updated id={}", id);
         return TaskResponse.from(task);
     }
 
@@ -86,6 +91,7 @@ public class TaskService {
     public void delete(UUID id) {
         Task task = findEntityById(id);
         repository.delete(task);
+        log.info("Task deleted id={}", id);
     }
 
     @Transactional
@@ -96,6 +102,7 @@ public class TaskService {
             TaskTag created = new TaskTag();
             created.setTask(task);
             created.setTag(tag);
+            log.info("Tag linked taskId={} tagId={}", taskId, tagId);
             return taskTagRepository.save(created);
         });
         return TagResponse.from(link.getTag());
@@ -107,6 +114,7 @@ public class TaskService {
         TaskTag link = taskTagRepository.findByTaskIdAndTagId(taskId, tagId)
                 .orElseThrow(() -> new ResourceNotFoundException("TaskTag", tagId));
         taskTagRepository.delete(link);
+        log.info("Tag unlinked taskId={} tagId={}", taskId, tagId);
     }
 
     public List<TagResponse> findTags(UUID taskId) {
@@ -122,6 +130,7 @@ public class TaskService {
     }
 
     private void changeStatus(Task task, TaskStatus status) {
+        log.info("Task status change id={} {} -> {}", task.getId(), task.getStatus(), status);
         task.setStatus(status);
         if (status == TaskStatus.DONE) {
             task.setCompletedAt(LocalDateTime.now());
