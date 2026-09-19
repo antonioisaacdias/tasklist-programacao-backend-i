@@ -1,0 +1,215 @@
+### Tasklist API — roteiro de verificação
+### Rode em ordem no IntelliJ HTTP Client.
+### Os ids criados são capturados automaticamente nas variáveis {{projectId}}, {{ownerId}}, {{taskId}}, {{tagId}}.
+
+@baseUrl = http://localhost:8080
+
+### 1. Criar um projeto (201 + Location)
+POST {{baseUrl}}/projects
+Content-Type: application/json
+
+{
+  "name": "Suppliers",
+  "description": "Vendor contracts and renewals"
+}
+
+> {%
+  client.assert(response.status === 201, "project not created");
+  client.global.set("projectId", response.body.id);
+%}
+
+### 2. Criar um responsável (201)
+POST {{baseUrl}}/owners
+Content-Type: application/json
+
+{
+  "name": "Ana Souza",
+  "email": "ana.{{$timestamp}}@example.com"
+}
+
+> {%
+  client.assert(response.status === 201, "owner not created");
+  client.global.set("ownerId", response.body.id);
+  client.global.set("ownerEmail", response.body.email);
+%}
+
+### Listar projetos (200)
+GET {{baseUrl}}/projects
+
+### Listar responsáveis (200)
+GET {{baseUrl}}/owners
+
+### 3a. Criar tarefa LOW (201 + Location)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Archive old contracts",
+  "description": "Move 2024 contracts to cold storage",
+  "priority": "LOW",
+  "dueDate": "2026-10-15",
+  "projectId": "{{projectId}}"
+}
+
+### 3b. Criar tarefa MEDIUM (prioridade omitida -> MEDIUM)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Update supplier list",
+  "dueDate": "2026-10-01",
+  "projectId": "{{projectId}}"
+}
+
+### 3c. Criar tarefa HIGH (201 + Location)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Review supplier contract",
+  "description": "Check price adjustment clauses before renewal",
+  "priority": "HIGH",
+  "dueDate": "2026-09-30",
+  "projectId": "{{projectId}}"
+}
+
+> {%
+  client.assert(response.status === 201, "task not created");
+  client.global.set("taskId", response.body.id);
+%}
+
+### 4. Listar tarefas — as três com status NEW, paginado (200)
+GET {{baseUrl}}/tasks
+
+### Bônus — paginação e ordenação (200)
+GET {{baseUrl}}/tasks?page=0&size=2&sort=title,asc
+
+### 5a. Filtrar por status — DONE retorna lista vazia (200)
+GET {{baseUrl}}/tasks?status=DONE
+
+### 5b. Filtrar por status e projeto (200)
+GET {{baseUrl}}/tasks?status=NEW&projectId={{projectId}}
+
+### 6. Consultar tarefa pelo id (200)
+GET {{baseUrl}}/tasks/{{taskId}}
+
+### 7. Atualizar para DONE — completedAt é preenchido (200)
+PUT {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "title": "Review supplier contract",
+  "description": "Check price adjustment clauses before renewal",
+  "priority": "HIGH",
+  "status": "DONE",
+  "dueDate": "2026-09-30",
+  "projectId": "{{projectId}}"
+}
+
+### 8. Atribuir responsável — ownerId aparece na resposta (200)
+PUT {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "title": "Review supplier contract",
+  "description": "Check price adjustment clauses before renewal",
+  "priority": "HIGH",
+  "status": "IN_PROGRESS",
+  "dueDate": "2026-09-30",
+  "projectId": "{{projectId}}",
+  "ownerId": "{{ownerId}}"
+}
+
+### Bônus — concluir sem enviar o objeto inteiro (200)
+PUT {{baseUrl}}/tasks/{{taskId}}/complete
+
+### Bônus — tarefas de um projeto (200)
+GET {{baseUrl}}/projects/{{projectId}}/tasks
+
+### Bônus — criar etiqueta (201)
+POST {{baseUrl}}/tags
+Content-Type: application/json
+
+{
+  "name": "urgent",
+  "color": "#FF0000"
+}
+
+> {%
+  client.assert(response.status === 201, "tag not created");
+  client.global.set("tagId", response.body.id);
+%}
+
+### Bônus — vincular etiqueta à tarefa (201)
+POST {{baseUrl}}/tasks/{{taskId}}/tags
+Content-Type: application/json
+
+{
+  "tagId": "{{tagId}}"
+}
+
+### Bônus — etiquetas da tarefa (200)
+GET {{baseUrl}}/tasks/{{taskId}}/tags
+
+### Bônus — desvincular etiqueta (204)
+DELETE {{baseUrl}}/tasks/{{taskId}}/tags/{{tagId}}
+
+### Bônus — comentar na tarefa (201)
+POST {{baseUrl}}/tasks/{{taskId}}/comments
+Content-Type: application/json
+
+{
+  "text": "Legal team already reviewed clause 4.",
+  "author": "Bruno Lima"
+}
+
+### Bônus — comentários da tarefa (200)
+GET {{baseUrl}}/tasks/{{taskId}}/comments
+
+### 9. Remover tarefa (204)
+DELETE {{baseUrl}}/tasks/{{taskId}}
+
+### 10. Consultar tarefa removida (404 com mensagem legível)
+GET {{baseUrl}}/tasks/{{taskId}}
+
+### Erro — projeto inexistente (404)
+GET {{baseUrl}}/projects/00000000-0000-0000-0000-000000000000/tasks
+
+### Erro — criar tarefa em projeto inexistente (404)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Orphan task",
+  "projectId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Erro — e-mail duplicado (409)
+POST {{baseUrl}}/owners
+Content-Type: application/json
+
+{
+  "name": "Ana Souza",
+  "email": "{{ownerEmail}}"
+}
+
+### Erro — campo obrigatório ausente (400)
+POST {{baseUrl}}/owners
+Content-Type: application/json
+
+{
+  "email": "no.name@example.com"
+}
+
+### Erro — ordenação por campo inexistente (400)
+GET {{baseUrl}}/tasks?sort=foo
+
+### Erro — status inválido (400)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Bad status",
+  "status": "FOO",
+  "projectId": "{{projectId}}"
+}

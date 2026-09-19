@@ -32,7 +32,7 @@ CREATE TABLE task (
 
 CREATE TABLE task_tag (
     id      UUID PRIMARY KEY,
-    task_id UUID NOT NULL REFERENCES task (id),
+    task_id UUID NOT NULL REFERENCES task (id) ON DELETE CASCADE,
     tag_id  UUID NOT NULL REFERENCES tag (id),
     UNIQUE (task_id, tag_id)
 );
@@ -42,5 +42,8 @@ CREATE TABLE comment (
     text       VARCHAR(500) NOT NULL,
     author     VARCHAR(100) NOT NULL,
     created_at TIMESTAMP    NOT NULL,
-    task_id    UUID         NOT NULL REFERENCES task (id)
+    task_id    UUID         NOT NULL REFERENCES task (id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_task_project_id ON task (project_id);
+CREATE INDEX idx_comment_task_id ON comment (task_id);

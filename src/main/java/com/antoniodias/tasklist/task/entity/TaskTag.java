@@ -9,10 +9,7 @@ import java.util.UUID;
 
 @Getter
 @Entity
-@Table(
-        name = "task_tag",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"task_id", "tag_id"})
-)
+@Table(name = "task_tag")
 public class TaskTag {
 
     @Id
@@ -20,12 +17,12 @@ public class TaskTag {
     private UUID id;
 
     @Setter
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
     @Setter
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tag_id", nullable = false)
     private Tag tag;
 }
