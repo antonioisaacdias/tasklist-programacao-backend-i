@@ -64,8 +64,10 @@ public class TaskController {
     }
 
     @GetMapping("/projects/{projectId}/tasks")
-    public List<TaskResponse> findByProject(@PathVariable UUID projectId) {
-        return service.findByProject(projectId);
+    public Page<TaskResponse> findByProject(
+            @PathVariable UUID projectId,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return service.findByProject(projectId, pageable);
     }
 
     @GetMapping("/tasks/{id}/tags")

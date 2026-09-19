@@ -193,6 +193,17 @@ Content-Type: application/json
   "email": "{{ownerEmail}}"
 }
 
+### Erro — campo obrigatório ausente (400)
+POST {{baseUrl}}/owners
+Content-Type: application/json
+
+{
+  "email": "no.name@example.com"
+}
+
+### Erro — ordenação por campo inexistente (400)
+GET {{baseUrl}}/tasks?sort=foo
+
 ### Erro — status inválido (400)
 POST {{baseUrl}}/tasks
 Content-Type: application/json

@@ -32,7 +32,7 @@ public class Task {
     @Setter
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private TaskPriority priority = TaskPriority.MEDIUM;
+    private TaskPriority priority;
 
     @Setter
     @Enumerated(EnumType.STRING)
