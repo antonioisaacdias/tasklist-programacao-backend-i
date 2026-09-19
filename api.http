@@ -13,7 +13,10 @@ Content-Type: application/json
   "description": "Vendor contracts and renewals"
 }
 
-> {% client.global.set("projectId", response.body.id); %}
+> {%
+  client.assert(response.status === 201, "project not created");
+  client.global.set("projectId", response.body.id);
+%}
 
 ### 2. Criar um responsável (201)
 POST {{baseUrl}}/owners
@@ -21,10 +24,14 @@ Content-Type: application/json
 
 {
   "name": "Ana Souza",
-  "email": "ana.souza@example.com"
+  "email": "ana.{{$timestamp}}@example.com"
 }
 
-> {% client.global.set("ownerId", response.body.id); %}
+> {%
+  client.assert(response.status === 201, "owner not created");
+  client.global.set("ownerId", response.body.id);
+  client.global.set("ownerEmail", response.body.email);
+%}
 
 ### Listar projetos (200)
 GET {{baseUrl}}/projects
@@ -66,7 +73,10 @@ Content-Type: application/json
   "projectId": "{{projectId}}"
 }
 
-> {% client.global.set("taskId", response.body.id); %}
+> {%
+  client.assert(response.status === 201, "task not created");
+  client.global.set("taskId", response.body.id);
+%}
 
 ### 4. Listar tarefas — as três com status NEW, paginado (200)
 GET {{baseUrl}}/tasks
@@ -125,7 +135,10 @@ Content-Type: application/json
   "color": "#FF0000"
 }
 
-> {% client.global.set("tagId", response.body.id); %}
+> {%
+  client.assert(response.status === 201, "tag not created");
+  client.global.set("tagId", response.body.id);
+%}
 
 ### Bônus — vincular etiqueta à tarefa (201)
 POST {{baseUrl}}/tasks/{{taskId}}/tags
@@ -177,7 +190,7 @@ Content-Type: application/json
 
 {
   "name": "Ana Souza",
-  "email": "ana.souza@example.com"
+  "email": "{{ownerEmail}}"
 }
 
 ### Erro — status inválido (400)
