@@ -30,7 +30,7 @@ public class Comment {
     private LocalDateTime createdAt;
 
     @Setter
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 }
