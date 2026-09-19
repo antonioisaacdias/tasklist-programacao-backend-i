@@ -49,6 +49,11 @@ public class TaskService {
         return findEntities(status, projectId).stream().map(TaskResponse::from).toList();
     }
 
+    public List<TaskResponse> findByProject(UUID projectId) {
+        projectService.findEntityById(projectId);
+        return repository.findByProjectId(projectId).stream().map(TaskResponse::from).toList();
+    }
+
     public TaskResponse findById(UUID id) {
         return TaskResponse.from(findEntityById(id));
     }
